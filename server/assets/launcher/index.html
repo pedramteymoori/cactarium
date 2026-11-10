@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cactarium</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Cactarium launcher. Shown by /phi-hook.js as a full-screen iframe inside
+  the TV's native UI; talks to it with postMessage (see launcher.js).
+  Markup and styling derived from Glasshouse's server/assets/home.html
+  (MIT License, (c) 2026 Rory Gallagher).
+-->
+<link rel="stylesheet" href="/launcher/launcher.css">
+</head>
+<body>
+<div id="stage">
+  <!-- The background (background.js): a canvas for the animated ones, two layers that cross-fade for pictures -->
+  <div id="wall"><canvas id="anim" width="0" height="0"></canvas><div class="layer"></div><div class="layer"></div></div>
+  <div id="scrim"></div>
+  <header id="now">
+    <div id="when">
+      <div id="clock"></div>
+      <div id="date"></div>
+    </div>
+    <div id="weather" class="none">
+      <div id="wxTemp"></div>
+      <div id="wxLine"></div>
+    </div>
+  </header>
+  <main id="rows"><div id="rowsIn"></div></main>
+  <div id="toast" role="status"></div>
+  <div id="busy"><span id="busyText">Opening</span></div>
+</div>
+<script src="/launcher/background.js"></script>
+<script src="/launcher/launcher.js"></script>
+</body>
+</html>

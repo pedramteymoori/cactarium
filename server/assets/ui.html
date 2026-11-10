@@ -1,0 +1,594 @@
+<!doctype html>
+<!-- Layout and styling derived from Glasshouse (MIT, Copyright (c) 2026 Rory Gallagher), https://github.com/rorygallagher2024/glasshouse -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#000000">
+<title>Cactarium</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23000'/%3E%3Cpath d='M12 20V6a2 2 0 0 1 4 0v5M12 14H8a2 2 0 0 1-2-2V9' fill='none' stroke='%2330de61' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/ui/ui.css">
+</head>
+<body>
+<a class="skip" href="#panels">Skip to content</a>
+
+<header>
+  <div class="src now" aria-live="polite">
+    <div class="st"><i class="dot" id="hdrDot"></i><span id="hdrText">Connecting</span></div>
+    <div class="t" id="hdrSource">&mdash;</div>
+  </div>
+  <div class="hdr-status" id="hdrStatus">
+    <div class="hdr-line num" id="hdrVolume" hidden></div>
+  </div>
+</header>
+
+<div class="banners" id="banners">
+  <div class="banner bad" id="bannerOffline" role="alert" hidden>Cannot reach Cactarium. Retrying.</div>
+  <div class="banner bad" id="bannerTv" role="alert" hidden>TV not reachable<span id="bannerTvErr"></span></div>
+  <div class="banner warn" id="bannerPair" hidden>Not paired. <a href="#server" data-goto="server">Pair on the Server tab</a></div>
+</div>
+
+<!-- The tabs: a sidebar on a wide screen, a drawer behind the menu bar on a narrow one. -->
+<div class="nav-bar">
+  <button type="button" class="nav-toggle" id="nav-toggle" aria-controls="sidenav" aria-expanded="false">
+    <svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    <span class="nav-current" id="nav-current"></span>
+    <span class="sr-only">Open menu</span>
+  </button>
+</div>
+<div class="nav-backdrop" id="nav-backdrop" hidden></div>
+<aside class="sidenav" id="sidenav" aria-label="Sections">
+  <div class="sidenav-head">
+    <span class="sidenav-brand">
+      <svg class="mark-logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V6a2.5 2.5 0 0 1 5 0v6M12 15H8a2.5 2.5 0 0 1-2.5-2.5V9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="sidenav-titles"><span class="sidenav-title">Cactarium</span><span class="sidenav-tv" id="navTv"></span></span>
+    </span>
+    <button type="button" class="nav-close" id="nav-close" aria-label="Close menu">&times;</button>
+  </div>
+  <nav class="tabs" id="tabs" role="tablist" aria-orientation="vertical">
+    <button type="button" role="tab" id="tab-control" data-tab="control" aria-controls="panel-control"><svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2.5" width="8" height="19" rx="3"/><circle cx="12" cy="8" r="1.6"/><path d="M10.5 13h3M10.5 16h3"/></svg><span>Control</span></button>
+    <button type="button" role="tab" id="tab-metrics" data-tab="metrics" aria-controls="panel-metrics"><svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span>Metrics</span></button>
+    <button type="button" role="tab" id="tab-apps" data-tab="apps" aria-controls="panel-apps"><svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg><span>Apps</span></button>
+    <button type="button" role="tab" id="tab-home" data-tab="home" aria-controls="panel-home"><svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6.5 9.5V19h11V9.5"/><path d="M10.5 19v-5h3v5"/></svg><span>Home</span></button>
+    <button type="button" role="tab" id="tab-picture" data-tab="picture" aria-controls="panel-picture"><svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="12.5" rx="1.5"/><path d="M8 20.5h8"/><path d="M12 7.5v7a3.5 3.5 0 0 0 0-7z" fill="currentColor" stroke="none"/><circle cx="12" cy="11" r="3.5"/></svg><span>Picture</span></button>
+    <button type="button" role="tab" id="tab-audio" data-tab="audio" aria-controls="panel-audio"><svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg><span>Audio</span></button>
+    <button type="button" role="tab" id="tab-game" data-tab="game" aria-controls="panel-game"><svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8h10a4 4 0 0 1 4 4v1.5a3 3 0 0 1-5.4 1.8L14.5 14h-5l-1.1 1.3A3 3 0 0 1 3 13.5V12a4 4 0 0 1 4-4z"/><path d="M7.5 11v2.5M6.25 12.25h2.5M16 12h.01"/></svg><span>Game</span></button>
+    <button type="button" role="tab" id="tab-ambilight" data-tab="ambilight" aria-controls="panel-ambilight"><svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="7.5" width="12" height="9" rx="1"/><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3"/></svg><span>Ambilight</span></button>
+    <button type="button" role="tab" id="tab-advanced" data-tab="advanced" aria-controls="panel-advanced"><svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span>System</span></button>
+    <div class="nav-rule" role="presentation"></div>
+    <button type="button" role="tab" id="tab-mqtt" data-tab="mqtt" aria-controls="panel-mqtt"><svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="18" cy="18" r="2.2"/><path d="M8 11l8-4M8 13l8 4"/></svg><span translate="no">MQTT</span></button>
+    <button type="button" role="tab" id="tab-server" data-tab="server" aria-controls="panel-server"><svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="7" rx="1.5"/><rect x="4" y="13" width="16" height="7" rx="1.5"/><path d="M8 7.5h.01M8 16.5h.01"/></svg><span>Server</span></button>
+  </nav>
+  <div class="sidenav-foot">
+    <div class="nav-rule" role="presentation"></div>
+    <details class="nav-pref" id="nav-pref">
+      <summary class="nav-pref-summary">
+        <svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Preferences</span>
+        <svg class="nav-pref-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </summary>
+      <div class="nav-pref-body">
+        <div class="nav-pref-grp">
+          <div class="nav-pref-lbl">Theme</div>
+          <div class="theme-seg" role="group" aria-label="Theme">
+            <button type="button" data-theme-set="auto">Auto</button><button type="button" data-theme-set="dark">Dark</button><button type="button" data-theme-set="light">Light</button>
+          </div>
+        </div>
+        <div class="nav-pref-grp nav-pref-sidebar">
+          <div class="nav-pref-lbl">Sidebar</div>
+          <div class="theme-seg" role="group" aria-label="Sidebar">
+            <button type="button" data-sidebar-set="show">Show</button><button type="button" data-sidebar-set="hide">Hide</button>
+          </div>
+        </div>
+      </div>
+    </details>
+  </div>
+</aside>
+
+<main id="panels">
+
+<!-- ================= CONTROL ================= -->
+<section class="panel" id="panel-control" role="tabpanel" aria-labelledby="tab-control" hidden>
+  <div class="lcols">
+    <div class="lcol">
+      <div class="col-sec">Control</div>
+
+      <div class="set"><div class="lbl">Panel</div>
+        <div class="btns">
+          <button class="key" id="btnScreenOff" type="button">Screen off</button>
+          <button class="key" id="btnScreenOn" type="button">Screen on</button>
+        </div>
+        <div class="busy-note" id="screenBusy" hidden>Not available while an app is open.</div>
+      </div>
+
+      <div class="set"><div class="lbl">Source</div>
+        <div class="btns" id="inputs"></div>
+        <div class="sub" id="inputsNote" hidden></div>
+      </div>
+
+      <div class="set"><div class="lbl">Playback</div>
+        <div class="playback-btns">
+          <button class="key" data-key="Previous" type="button">Previous</button>
+          <button class="key" data-key="Rewind" type="button">Rewind</button>
+          <button class="key" data-key="PlayPause" type="button">Play / Pause</button>
+          <button class="key" data-key="Stop" type="button">Stop</button>
+          <button class="key" data-key="FastForward" type="button">Fast Fwd</button>
+          <button class="key" data-key="Next" type="button">Next</button>
+        </div>
+      </div>
+
+      <div class="set"><div class="lbl">Volume &middot; <span class="num" id="volNum">--</span></div>
+        <div class="vol-row">
+          <button class="key" id="volDown" type="button" aria-label="Volume down" data-icon="minus"></button>
+          <input type="range" id="volSlider" min="0" max="60" step="1" value="0" aria-label="Volume">
+          <button class="key" id="volUp" type="button" aria-label="Volume up" data-icon="plus"></button>
+        </div>
+        <div class="btns two"><button class="key" id="btnMute" type="button" aria-pressed="false"><span id="muteLabel">Mute</span></button></div>
+      </div>
+
+      <details class="disc" id="disc-dpad" open>
+        <summary><span>D-pad</span> <span class="cur">Navigate the TV</span></summary>
+        <div class="set">
+          <div class="dpad" role="group" aria-label="Navigation">
+            <button class="key dp dp-up" data-key="CursorUp" data-icon="up" aria-label="Up" title="Up"></button>
+            <button class="key dp dp-left" data-key="CursorLeft" data-icon="left" aria-label="Left" title="Left"></button>
+            <button class="key dp dp-ok" data-key="Confirm" aria-label="OK" title="Select">OK</button>
+            <button class="key dp dp-right" data-key="CursorRight" data-icon="right" aria-label="Right" title="Right"></button>
+            <button class="key dp dp-down" data-key="CursorDown" data-icon="down" aria-label="Down" title="Down"></button>
+          </div>
+          <div class="btns five">
+            <button class="key" data-key="Back">Back</button>
+            <button class="key" data-key="Home">Home</button>
+            <button class="key" data-key="Options">Options</button>
+            <button class="key" data-key="Source">Source</button>
+            <button class="key" data-key="Info">Info</button>
+          </div>
+          <div class="colours" role="group" aria-label="Colour keys" style="margin-top:12px">
+            <button class="key colour red" data-key="RedColour" aria-label="Red"></button>
+            <button class="key colour green" data-key="GreenColour" aria-label="Green"></button>
+            <button class="key colour yellow" data-key="YellowColour" aria-label="Yellow"></button>
+            <button class="key colour blue" data-key="BlueColour" aria-label="Blue"></button>
+          </div>
+          <div class="chan" role="group" aria-label="Channel" style="margin-top:12px">
+            <button class="key" data-key="ChannelStepDown" data-icon="down" aria-label="Channel down"></button>
+            <span class="lbl">Ch</span>
+            <button class="key" data-key="ChannelStepUp" data-icon="up" aria-label="Channel up"></button>
+          </div>
+          <p class="sub dpad-keys">On a keyboard: the arrows, Enter for OK, Esc or Backspace for Back, H for Home, M to mute, + and - for volume.</p>
+        </div>
+      </details>
+
+      <details class="disc" id="disc-numpad">
+        <summary><span>Number pad</span></summary>
+        <div class="numpad" id="numpad"></div>
+      </details>
+    </div>
+
+    <div class="lcol">
+      <div class="col-sec" aria-hidden="true">&nbsp;</div>
+
+      <details class="disc" id="disc-picture" style="margin-top:0">
+        <summary><span>Picture</span> <span class="cur" id="ctlPicCur"></span></summary>
+        <div class="set"><div class="lbl">Mode &middot; <span class="num" id="ctlPicMode">&mdash;</span></div>
+          <div class="btns" id="picmodes"></div>
+          <div class="busy-note" id="ctlPicBusy" hidden>Not available while an app is open.</div>
+        </div>
+      </details>
+
+      <details class="disc" id="disc-apps">
+        <summary><span>Apps</span> <span class="cur" id="ctlAppsCur"></span></summary>
+        <div class="set"><div class="app-grid" id="ctlApps"></div></div>
+      </details>
+
+      <div class="set" id="pwset"><div class="lbl">Power</div>
+        <div class="btns">
+          <button class="key" id="btnPower" type="button" aria-pressed="false"><span id="powerLabel">Power</span></button>
+          <button class="key danger" id="btnReboot" type="button">Reboot</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= METRICS ================= -->
+<section class="panel" id="panel-metrics" role="tabpanel" aria-labelledby="tab-metrics" hidden>
+  <div class="col-sec">System</div>
+  <div class="lcols">
+    <div class="lcol">
+      <section class="grp-sec" id="tempblock">
+        <div class="grp">Temperature</div>
+        <div class="hero">
+          <div>
+            <div class="lbl" style="margin-bottom:14px" translate="no">SoC</div>
+            <div class="big num none" id="tempbig"><span id="temp">&mdash;</span><span class="deg" id="degsym" hidden>&deg;</span></div>
+          </div>
+          <div class="side">
+            <div class="trace" id="trace"></div>
+            <div class="meta num"><span id="trange">&mdash;</span><span id="tempname"></span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grp-sec">
+        <div class="grp">System</div>
+        <div class="readouts" id="readouts">
+          <div class="r" id="row-cpu"><div><div class="lbl">Processor</div><div class="sub" id="sub-cpu"></div></div><div class="track"><b id="bar-cpu"></b></div><div class="v num" id="val-cpu">&mdash;</div></div>
+          <div class="r" id="row-mem"><div><div class="lbl">Memory</div><div class="sub" id="sub-mem"></div></div><div class="track"><b id="bar-mem"></b></div><div class="v num" id="val-mem">&mdash;</div></div>
+          <div class="r" id="row-swap"><div><div class="lbl">Swap</div><div class="sub" id="sub-swap"></div></div><div class="track"><b id="bar-swap"></b></div><div class="v num" id="val-swap">&mdash;</div></div>
+          <div class="r" id="row-net"><div><div class="lbl">Network</div><div class="sub" id="sub-net"></div></div><div class="track"><b id="bar-net"></b></div><div class="v num" id="val-net">&mdash;</div></div>
+          <div class="r r-text" id="row-addr" hidden><div class="lbl">Addresses</div><div class="sub" id="sub-addr"></div></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="lcol">
+      <section class="grp-sec" id="storeblock">
+        <div class="grp">Storage</div>
+        <div id="appstore-cell" hidden>
+          <div class="lbl">App space</div>
+          <div class="n num" style="margin-top:10px"><span id="appstore">&mdash;</span><em>GB free</em></div>
+          <div class="sub" id="appstore-sub"></div>
+        </div>
+        <div class="sub" id="store-other"></div>
+        <div class="flash-row" id="flash-row" hidden title="How much of its life the TV's flash storage estimates it has used, and its own end-of-life warning, which only changes as it nears the end.">
+          <div><div class="lbl">Flash wear</div><div class="flash-v"><span class="num" id="flash-wear">&mdash;</span><span class="flash-meter" id="flash-meter" aria-hidden="true"></span></div></div>
+          <div><div class="lbl">Health</div><div class="flash-v"><span class="pill idle" id="flash-health">&mdash;</span></div></div>
+        </div>
+      </section>
+
+      <section class="grp-sec" id="hdmiblock" hidden>
+        <div class="grp"><span translate="no">HDMI</span><span class="cur" id="hdmi-cur"></span></div>
+        <div class="ports" id="hdmi-grid"></div>
+      </section>
+
+      <section class="grp-sec">
+        <div class="grp">Advanced</div>
+        <details class="disc" id="disc-hwinfo" style="border-top:0;margin-top:0">
+          <summary>System info</summary>
+          <dl class="kv">
+            <dt>Uptime</dt><dd class="num" id="sysUp">--</dd>
+            <dt>Load average</dt><dd class="num" id="sysLoad">--</dd>
+            <dt>Processes</dt><dd class="num" id="sysProcs">--</dd>
+            <dt>Cactarium memory</dt><dd class="num" id="sysRss">--</dd>
+            <dt>Cactarium goroutines</dt><dd class="num" id="sysGo">--</dd>
+          </dl>
+        </details>
+        <details class="disc" id="disc-proc">
+          <summary><span>Process memory</span> <span class="cur" id="proc-cur"></span></summary>
+          <div id="proc-list"></div>
+        </details>
+        <details class="disc" id="disc-cpu">
+          <summary><span>Detailed CPU usage</span> <span class="cur" id="cpu-cur"></span></summary>
+          <div id="cpu-list"></div>
+        </details>
+      </section>
+    </div>
+  </div>
+</section>
+
+<!-- ================= APPS ================= -->
+<section class="priv panel" id="panel-apps" role="tabpanel" aria-labelledby="tab-apps" hidden>
+  <div class="pv-sec">Apps</div>
+  <p class="pv-sub">The apps on the launcher's row, in order. Launch opens one on the TV. Change the row on the <a href="#home" data-goto="home">Home tab</a>.</p>
+  <div class="busy-note" id="appsBusy" hidden>Not available while an app is open.</div>
+  <div class="err-note" id="appsErr" role="alert"></div>
+  <div class="app-cards" id="appsGrid" aria-busy="true"></div>
+  <p class="sub" id="appsEmpty" hidden>The row is empty, so the launcher shows the TV's own app list. Add apps on the Home tab.</p>
+</section>
+
+<!-- ================= HOME ================= -->
+<section class="priv panel" id="panel-home" role="tabpanel" aria-labelledby="tab-home" hidden>
+  <div id="home-hero">
+    <div class="ps-state">
+      <span class="ps-dot" id="home-dot"></span>
+      <div>
+        <div class="ps-head" id="home-state">&mdash;</div>
+        <div class="pv-sub" id="home-state-desc"></div>
+      </div>
+    </div>
+    <div class="pv-note warn">Takes effect on the next Home press. Press Home twice quickly to open the stock TitanOS home.</div>
+    <div class="lbl">Choose your launcher</div>
+    <div class="btns" id="home-mode-btns">
+      <button type="button" id="home-mode-titan">TitanOS Home</button>
+      <button type="button" id="home-mode-cactarium">Cactarium launcher</button>
+    </div>
+  </div>
+
+  <div class="pv-sec adv-sec">Apps row</div>
+  <p class="pv-sub">The apps the Cactarium launcher shows, in order. Left empty, it uses the TV's own app list. The list comes from the public TitanOS catalog.</p>
+  <div class="err-note" id="home-apps-err" role="alert"></div>
+  <div class="prot-table one" id="home-apps"></div>
+  <div class="toast-form" style="flex-wrap:wrap">
+    <input type="search" id="home-add-q" placeholder="Search the catalog" maxlength="60" autocomplete="off" aria-label="Search the catalog">
+    <select class="pill-sel" id="home-add-sel" aria-label="App to add" style="min-width:200px;height:48px"></select>
+    <button type="button" id="home-add-btn">Add</button>
+  </div>
+  <p class="sub" id="home-cat-note"></p>
+
+  <div class="pv-sec adv-sec">Home customisation</div>
+  <div class="home-group" id="home-g-layout">
+    <div class="pv-g">Starting up</div>
+    <div class="prot-table one">
+      <div class="prot-row">
+        <div class="prot-main">
+          <div class="prot-title">Block TitanOS home</div>
+          <div class="prot-desc">Stops the TV loading the TitanOS cloud launcher (<code>app.titanos.tv</code>), so it uses its local offline launcher. Applied at once with iptables rules.</div>
+        </div>
+        <div class="prot-status"><button type="button" class="pill idle" id="home-block">&mdash;</button></div>
+      </div>
+    </div>
+  </div>
+  <div class="home-group" id="home-g-shown">
+    <div class="pv-g">Shown on Home</div>
+    <div class="prot-table one">
+      <div class="prot-row">
+        <div class="prot-main">
+          <div class="prot-title">Weather</div>
+          <div class="prot-desc">A weather badge on the launcher, from Open-Meteo. Leave both fields empty to turn it off.</div>
+          <form class="toast-form" id="home-weather-form">
+            <input type="text" id="wxLat" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="Latitude, e.g. 51.5072" aria-label="Weather latitude">
+            <input type="text" id="wxLon" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="Longitude, e.g. -0.1276" aria-label="Weather longitude">
+            <button type="submit">Save</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Background: ported from Glasshouse's Home tab (MIT, Copyright (c) 2026 Rory Gallagher) -->
+  <div class="pv-sec adv-sec">Background</div>
+  <p class="pv-sub">What is behind the launcher: nothing, pictures that change with the part of the day, or a moving background.</p>
+  <div class="btns wall-choice" id="home-bg-kind"></div>
+  <div id="home-bg-pictures" hidden>
+    <p class="sub">A picture for each part of the day: one of the picture sets, or your own.</p>
+    <div class="btns wall-choice" id="home-wall-choice"></div>
+    <div class="wall-day" id="home-wall-day"></div>
+    <div class="wall-cards" id="home-walls"></div>
+    <input type="file" id="home-wall-file" accept="image/jpeg,image/png,image/webp" hidden>
+    <div class="wall-foot">
+      <div class="sub" id="home-wall-help">JPEG, PNG or WebP, up to 25 MB. Images are resized to fit 1920 &times; 1080, the size the launcher is drawn at, before upload, and fill the screen.</div>
+      <div class="wall-foot-btns">
+        <button type="button" class="pill idle" id="home-wall-clear">Remove all</button>
+      </div>
+    </div>
+    <div class="sub" id="home-wall-note" role="status"></div>
+  </div>
+  <div id="home-bg-animated" hidden>
+    <p class="sub">Light that moves slowly behind the launcher. It stops whenever the launcher is not on screen.</p>
+    <div class="btns wall-choice scenes" id="home-anim-scenes"></div>
+    <p class="sub">Its colours: following the part of the day, a preset, or a background and a light colour of your own. In the aquarium they are the water and the light through it.</p>
+    <div class="home-looks" id="home-anim-themes"></div>
+    <div class="home-custom">
+      <label><input type="color" id="home-anim-sky"> <span>Background</span></label>
+      <label><input type="color" id="home-anim-light"> <span>Light</span></label>
+    </div>
+  </div>
+  <div class="set home-dark" id="home-dark" hidden><div class="lbl">Darkening &middot; <span id="home-dark-lbl" class="num">&mdash;</span></div>
+    <p class="sub">How much the background is darkened behind the clock and the rows, to keep them easy to read. Off shows the picture as it is.</p>
+    <input type="range" id="home-dark-slider" min="0" max="100" step="5" value="100" aria-label="Darkening" style="margin-top:11px">
+  </div>
+</section>
+
+<!-- ================= PICTURE ================= -->
+<section class="priv panel" id="panel-picture" role="tabpanel" aria-labelledby="tab-picture" hidden>
+  <div class="busy-note" id="picBusy" hidden>Not available while an app is open. Close the app and the picture settings come back.</div>
+  <div class="err-note" id="picErr" role="alert"></div>
+  <div class="pic-now" id="pic-now" hidden>
+    <div class="pic-now-main">
+      <div class="pic-mode" id="pic-mode" role="status">&mdash;</div>
+      <div class="pic-scope" id="pic-scope">Every setting below belongs to this picture style.</div>
+    </div>
+    <div class="pic-mode-ctl"><select class="pill-sel" id="pic-mode-sel" aria-label="Picture style"></select></div>
+  </div>
+  <div id="pic-groups"></div>
+</section>
+
+<!-- ================= AUDIO ================= -->
+<section class="priv panel" id="panel-audio" role="tabpanel" aria-labelledby="tab-audio" hidden>
+  <div class="pv-sec">Sound</div>
+  <div class="busy-note" id="audBusy" hidden>Not available while an app is open. Close the app and the sound settings come back.</div>
+  <div class="err-note" id="audErr" role="alert"></div>
+  <div class="set" style="margin-top:0"><div class="lbl">Volume &middot; <span class="num" id="audVolNum">--</span></div>
+    <div class="vol-row">
+      <button class="key" id="audVolDown" type="button" aria-label="Volume down" data-icon="minus"></button>
+      <input type="range" id="audVolSlider" min="0" max="60" step="1" value="0" aria-label="Volume">
+      <button class="key" id="audVolUp" type="button" aria-label="Volume up" data-icon="plus"></button>
+    </div>
+    <div class="btns two"><button class="key" id="audMute" type="button" aria-pressed="false"><span id="audMuteLabel">Mute</span></button></div>
+  </div>
+  <div style="margin-top:26px" id="audio-settings"></div>
+</section>
+
+<!-- ================= GAME ================= -->
+<section class="priv panel" id="panel-game" role="tabpanel" aria-labelledby="tab-game" hidden>
+  <div class="pv-sec">Game</div>
+  <div class="busy-note" id="gameBusy" hidden>Not available while an app is open.</div>
+  <div class="err-note" id="gameErr" role="alert"></div>
+  <div id="game-rows"></div>
+</section>
+
+<!-- ================= AMBILIGHT ================= -->
+<section class="panel" id="panel-ambilight" role="tabpanel" aria-labelledby="tab-ambilight" hidden>
+  <div class="busy-note" id="ambBusy" hidden>Not available while an app is open. Close the app and the Ambilight controls come back.</div>
+  <div class="err-note" id="ambErr" role="alert"></div>
+  <div class="lcols">
+    <div class="lcol">
+      <section class="grp-sec">
+        <div class="grp grp-split"><span>Live preview</span>
+          <button class="switch" id="ambSwitch" role="switch" aria-checked="false" aria-label="Ambilight power"><span class="knob"></span></button>
+        </div>
+        <div class="amb-stage"><canvas id="ambCanvas" aria-label="Ambilight live preview" role="img"></canvas></div>
+        <div class="sub" id="ambNow"></div>
+      </section>
+    </div>
+    <div class="lcol">
+      <section class="grp-sec">
+        <div class="grp">Style</div>
+        <div id="ambStyles" class="styles"></div>
+      </section>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SYSTEM (advanced) ================= -->
+<section class="priv panel" id="panel-advanced" role="tabpanel" aria-labelledby="tab-advanced" hidden>
+  <div class="pv-sec">Power &amp; standby</div>
+  <div class="busy-note" id="advBusy" hidden>Not available while an app is open. Close the app and the TV's own settings come back.</div>
+  <div class="err-note" id="advErr" role="alert"></div>
+  <div class="prot-table" id="adv-power"></div>
+
+  <div class="pv-sec adv-sec">HDMI</div>
+  <div class="prot-table" id="adv-hdmi"></div>
+
+  <div class="pv-sec adv-sec">Name</div>
+  <div class="prot-table one">
+    <div class="prot-row">
+      <div class="prot-main">
+        <div class="prot-title">TV name</div>
+        <div class="prot-desc">Shown at the top of the dashboard and used as the Home Assistant device name.</div>
+        <form class="toast-form" id="advNameForm">
+          <input type="text" id="setName" maxlength="60" autocomplete="off" aria-label="TV name">
+          <button type="submit">Save</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <details class="pv-d disc" id="adv-sysinfo" style="margin-top:34px">
+    <summary><span>System information</span> <span class="cur">As the TV reports it</span></summary>
+    <dl class="kv" id="sysTv"></dl>
+  </details>
+</section>
+
+<!-- ================= MQTT ================= -->
+<section class="priv panel" id="panel-mqtt" role="tabpanel" aria-labelledby="tab-mqtt" hidden>
+  <form class="cfg-cols" id="mqttForm">
+    <div class="cfg-side">
+      <div class="cfg-toggles" style="margin-top:0">
+        <button type="button" class="pill idle" id="mqEnabled" aria-pressed="false">MQTT bridge</button>
+      </div>
+      <div class="sub" id="mqttStatus" style="margin-top:8px"></div>
+      <div class="mqtt-net">
+        <div class="mqtt-net-node">
+          <div class="mqtt-net-body" style="min-width:0">
+            <div class="mqtt-net-name" id="mqttBrokerName">&mdash;</div>
+            <div class="mqtt-net-sub" id="mqttBrokerSub">Broker</div>
+          </div>
+          <span class="mqtt-dot idle" id="mqttDot"></span>
+        </div>
+      </div>
+    </div>
+    <div class="cfg-main">
+      <div class="pv-h" style="margin-top:0">Broker</div>
+      <div class="pv-sub">Where Cactarium publishes the TV's state. Home Assistant picks the entities up through MQTT discovery once the broker is reachable.</div>
+      <div class="cfg-grid">
+        <div class="cfg-f"><label for="mqHost">Broker address</label><input type="text" id="mqHost" placeholder="192.168.1.10" autocomplete="off" spellcheck="false" inputmode="url"><div class="hint">Hostname or IP of the MQTT broker.</div></div>
+        <div class="cfg-f"><label for="mqPort">Port</label><input type="number" id="mqPort" min="1" max="65535" inputmode="numeric" placeholder="1883"><div class="hint">Left blank: 1883.</div></div>
+        <div class="cfg-f"><label for="mqUser">Username</label><input type="text" id="mqUser" autocomplete="off" spellcheck="false"><div class="hint">Blank for an anonymous broker.</div></div>
+        <div class="cfg-f"><label for="mqPass">Password</label><input type="password" id="mqPass" autocomplete="new-password"><div class="hint" id="mqPassHint"></div></div>
+      </div>
+      <div class="pv-note">The connection is plain MQTT, so the username and password cross the network in cleartext. Use a broker account limited to these topics.</div>
+      <div class="pv-h">Topics &amp; identity</div>
+      <div class="cfg-grid">
+        <div class="cfg-f"><label for="mqPrefix">Topic prefix</label><input type="text" id="mqPrefix" placeholder="cactarium" autocomplete="off" spellcheck="false"><div class="hint">State goes to topics under this prefix.</div></div>
+        <div class="cfg-f"><label for="mqDisc">Discovery prefix</label><input type="text" id="mqDisc" placeholder="homeassistant" autocomplete="off" spellcheck="false"><div class="hint">Only change if Home Assistant was reconfigured.</div></div>
+        <div class="cfg-f"><label for="mqInterval">Publish interval</label><input type="number" id="mqInterval" min="1" max="3600" inputmode="numeric" placeholder="10"><div class="hint">Seconds between publishes.</div></div>
+      </div>
+      <div class="cfg-save"><button class="key" type="submit">Save</button><span class="sub" style="margin:0">Saving restarts the bridge.</span></div>
+    </div>
+  </form>
+</section>
+
+<!-- ================= SERVER ================= -->
+<section class="priv panel" id="panel-server" role="tabpanel" aria-labelledby="tab-server" hidden>
+  <div class="pv-sec">Pairing</div>
+  <div class="prot-table one">
+    <div class="prot-row">
+      <div class="prot-main">
+        <div class="prot-title">JointSpace pairing</div>
+        <div class="prot-desc" id="pairHint"></div>
+        <div id="pairIdle" class="stack">
+          <div class="cfg-f" id="secretField" hidden>
+            <label for="appSecret">App secret</label>
+            <input type="password" id="appSecret" autocomplete="off" spellcheck="false" placeholder="Base64 vendor secret">
+          </div>
+          <div class="btns col">
+            <button class="key on" id="pairStart" type="button">Start pairing</button>
+            <button class="key" id="pairHavePin" type="button">I have a PIN</button>
+            <button class="key danger" id="pairForget" type="button">Forget</button>
+          </div>
+        </div>
+        <form id="pairPinForm" class="stack" hidden>
+          <p class="notice">Look at the TV for a 4-digit PIN.</p>
+          <div class="cfg-f">
+            <label for="pairPin">PIN</label>
+            <input type="text" id="pairPin" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="one-time-code" placeholder="1234">
+          </div>
+          <div class="btns col">
+            <button class="key on" type="submit">Finish</button>
+            <button class="key" type="button" id="pairCancel">Cancel</button>
+          </div>
+        </form>
+      </div>
+      <div class="prot-status"><span class="pill idle" id="pairPill">--</span></div>
+    </div>
+  </div>
+
+  <div class="pv-sec adv-sec">About</div>
+  <div class="prot-table one">
+    <div class="prot-row"><div class="prot-main"><div class="prot-title">Version</div></div><div class="prot-status num" id="abVersion">--</div></div>
+    <div class="prot-row"><div class="prot-main"><div class="prot-title">Device ID</div></div><div class="prot-status num" id="abDevice">--</div></div>
+    <div class="prot-row"><div class="prot-main"><div class="prot-title">TV host</div></div><div class="prot-status num" id="abHost">--</div></div>
+  </div>
+
+  <div class="pv-sec adv-sec">Access</div>
+  <div class="prot-table one">
+    <div class="prot-row">
+      <div class="prot-main">
+        <div class="prot-title">Access token</div>
+        <div class="prot-desc" id="abAuth">--</div>
+        <div class="prot-desc">The dashboard has no sign-in unless an access token is set in the config file. Anyone on the network can control the TV. <b>Set access token</b> stores a token in this browser for a server that has one.</div>
+      </div>
+      <div class="prot-status"><button class="pill idle" id="tokenBtn" type="button">Set access token</button></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <span class="foot-end"><span id="version"></span><button type="button" class="theme-toggle" id="theme-toggle">&#9790;</button></span>
+</footer>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<dialog id="tokenDlg">
+  <form method="dialog" id="tokenForm">
+    <h2 class="grp">Access token</h2>
+    <p class="hint">This Cactarium needs a token.</p>
+    <div class="cfg-f"><label for="tokenInput">Token</label><input type="password" id="tokenInput" autocomplete="off" spellcheck="false"></div>
+    <div class="btns col"><button class="key on" value="ok">Save</button><button class="key" value="cancel" formnovalidate>Cancel</button></div>
+  </form>
+</dialog>
+
+<script src="/ui/core.js"></script>
+<script src="/ui/theme.js"></script>
+<script src="/ui/state.js"></script>
+<script src="/ui/tabs.js"></script>
+<script src="/ui/phi.js"></script>
+<script src="/ui/settings.js"></script>
+<script src="/ui/control.js"></script>
+<script src="/ui/metrics.js"></script>
+<script src="/ui/apps.js"></script>
+<script src="/ui/home.js"></script>
+<script src="/ui/picture.js"></script>
+<script src="/ui/audio.js"></script>
+<script src="/ui/game.js"></script>
+<script src="/ui/ambilight.js"></script>
+<script src="/ui/advanced.js"></script>
+<script src="/ui/mqtt.js"></script>
+<script src="/ui/server.js"></script>
+<script src="/ui/main.js"></script>
+</body>
+</html>

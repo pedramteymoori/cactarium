@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Cactarium</title>
+<!--
+  The Cactarium TV app: the dashboard as it appears on the TV itself, driven by
+  the remote. Opened from the launcher's Cactarium tile, in the launcher's own
+  frame; Back and Home return to the launcher (see the script below). The server
+  replaces the marker below with the access token's <meta> tag, for the TV
+  itself only (server/lib/routes/tvapp.go).
+  Layout, styling and behaviour ported from Glasshouse's TV app, its
+  server/assets/dashboard.html (MIT License, (c) 2026 Rory Gallagher).
+-->
+<!--cactarium-token-->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23000'/%3E%3Cpath d='M12 20V6a2 2 0 0 1 4 0v5M12 14H8a2 2 0 0 1-2-2V9' fill='none' stroke='%2330de61' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+/* Left/Right flips between sections, Up/Down moves within one. Outfit for the
+   clock, Manrope for the rows, on true black. Sized for 1080p viewed from the
+   sofa, which is why the type is large and the palette is opacity steps rather
+   than colour. */
+@font-face{font-family:'Outfit';src:url('/fonts/Outfit.ttf') format('truetype');font-weight:100 900;font-display:swap}
+@font-face{font-family:'Manrope';src:url('/fonts/Manrope.ttf') format('truetype');font-weight:200 800;font-display:swap}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#000;overflow:hidden;cursor:none}
+body{font-family:'Manrope',sans-serif;color:#fff;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+
+#stage{width:100%;height:100vh;display:flex;flex-direction:column;padding:5vh 0 5vh 8vw}
+
+/* The clock on the left and the Cactarium mark on the right, at the clock's
+   height, level with the end of the tab bar. */
+#top{display:flex;align-items:center;justify-content:space-between;flex:0 0 auto;margin:0 4vw 3.4vh 0}
+#mark{height:4.6vh;width:3.3vh;color:#30de61;opacity:.92}
+#clock{font-family:'Manrope',sans-serif;font-weight:400;font-size:4.4vh;letter-spacing:.01em;line-height:1;opacity:.65}
+
+#tabs{display:flex;align-items:baseline;flex:0 0 auto;margin:0 4vw 3.2vh 0;
+  /* the bar clips so it can scroll, and at line-height 1 that takes the tails
+     of g and y with it; the padding makes room and the margin gives it back */
+  padding-bottom:1.2vh;white-space:nowrap;overflow:hidden}
+#tabs.clip-r{-webkit-mask-image:linear-gradient(to right,#000 88%,transparent);mask-image:linear-gradient(to right,#000 88%,transparent)}
+#tabs.clip-l{-webkit-mask-image:linear-gradient(to left,#000 88%,transparent);mask-image:linear-gradient(to left,#000 88%,transparent)}
+#tabs.clip-l.clip-r{-webkit-mask-image:linear-gradient(to right,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(to right,transparent,#000 12%,#000 88%,transparent)}
+.tab{display:inline-block;font-family:'Manrope',sans-serif;font-weight:400;font-size:4.2vh;line-height:1;letter-spacing:.01em;
+  color:rgba(255,255,255,.50);transition:color .22s ease;white-space:nowrap;flex:0 0 auto;padding-right:2.8vw}
+.tab:last-child{padding-right:0}
+/* A hidden bold copy sets each tab's width, so selecting one (which bolds it)
+   does not push the tabs after it along. */
+.tab::after{content:attr(data-label);display:block;font-weight:600;height:0;overflow:hidden;visibility:hidden}
+.tab.on{color:#fff;font-weight:600}
+
+/* Two columns: the rows on the left, an explainer for whichever row is selected
+   on the right. */
+#main{flex:1 1 auto;display:flex;overflow:hidden;padding-right:4vw;min-height:0}
+#list{flex:1 1 62%;overflow:hidden;position:relative}
+#rows{position:absolute;left:0;right:0;transition:transform .28s cubic-bezier(.4,0,.2,1)}
+
+#hint{flex:0 0 31%;margin-left:2.6vw;align-self:center;border-left:1px solid rgba(255,255,255,.14);
+  padding-left:2.4vw;opacity:0;transition:opacity .22s ease}
+#hint.on{opacity:1}
+.h-title{font-weight:600;font-size:3.4vh;line-height:1.15;letter-spacing:.005em;margin-bottom:1.6vh}
+.h-body{font-weight:400;font-size:2.1vh;line-height:1.65;color:rgba(255,255,255,.68)}
+.h-warn{display:none;font-weight:400;font-size:2vh;line-height:1.6;color:rgba(255,255,255,.78);
+  border-left:2px solid #e9ad55;padding-left:1.2vw;margin-top:1.8vh}
+.h-warn.on{display:block}
+/* A row's entry lists what the row holds, in its order, so what is inside is
+   known before opening it. */
+.h-peek{display:none;margin-top:2.2vh}
+.h-peek.on{display:block}
+.h-peek span{display:block;font-weight:500;font-size:2.3vh;line-height:1.7;color:rgba(255,255,255,.88);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.h-peek .peek-more{font-weight:400;color:rgba(255,255,255,.5)}
+/* What OK does here, or that it does nothing. Green only when there is
+   something to press, so the colour itself carries the distinction. */
+.h-act{font-weight:600;font-size:1.7vh;letter-spacing:.14em;text-transform:uppercase;margin-top:2.4vh;color:#30de61}
+.h-act.ro{color:rgba(255,255,255,.50)}
+
+/* For the row that can only be used in a browser: a code to scan and the
+   address under it, so the dashboard can be opened without typing an address
+   on a remote. White on black would invert the code, so it sits on a white
+   tile with its own quiet zone. */
+.h-qr{margin-top:2.4vh;display:none}
+.h-qr.on{display:block}
+.h-qr svg{width:15vh;height:15vh;display:block;background:#fff;padding:1vh;border-radius:.6vh}
+.h-url{font-weight:400;font-size:1.6vh;letter-spacing:.01em;color:rgba(255,255,255,.55);margin-top:1.2vh;word-break:break-all}
+
+/* A row is a label and its value. Only the selected one is full white and
+   slightly enlarged; the rest recede, so the eye lands on the choice. The
+   right padding is the scroll arrows' lane. */
+.row{display:flex;align-items:baseline;justify-content:space-between;height:7.6vh;padding-right:3.4vw;
+  opacity:.55;transition:opacity .22s ease,transform .22s ease;transform-origin:left center}
+.row.sel{opacity:1;transform:scale(1.03)}
+.lbl{font-weight:500;font-size:3.1vh;letter-spacing:.01em}
+.val{font-weight:400;font-size:3.1vh;color:rgba(255,255,255,.75);text-align:right;white-space:nowrap;padding-left:2vw}
+.row.sel .val{font-weight:600;color:rgba(255,255,255,.90)}
+/* A second, smaller line under a value, in the space the row leaves below it.
+   A row with two is taller by one such line (TALL_VH). */
+.val .sub{display:block;font-size:2.1vh;line-height:1.2;font-weight:400;color:rgba(255,255,255,.5)}
+.row.tall{height:10.2vh}
+/* A setting being adjusted: its value over a bar of its range, the filled part
+   from the start, or from 0 where the range runs either side. */
+.val .bar{display:block;position:relative;width:22vw;height:.5vh;margin-top:1vh;background:rgba(255,255,255,.18);border-radius:.25vh}
+.val .bar i{position:absolute;top:0;bottom:0;background:#30de61;border-radius:.25vh}
+.val .bar b{position:absolute;top:50%;width:1.8vh;height:1.8vh;margin:-.9vh 0 0 -.9vh;border-radius:50%;background:#fff}
+.row.adj .val{color:#fff}
+/* The state of a switch or a choice; green only when the row is selected would
+   hide it on the rows that recede, so these keep their colour. */
+.val.on{color:#30de61}
+.val.off{color:rgba(255,255,255,.45)}
+.val.bad{color:#e65050}
+.val.warn{color:#e9ad55}
+.val.act{color:rgba(255,255,255,.50)}
+/* Opens a list of its own; the way back is the list's first row. */
+.val.opens::after{content:'\203A';display:inline-block;margin-left:1.1vw}
+.row.sel .val.act{color:#30de61}
+.row.sel .val.bad{color:#ff6b6b}
+.row.sel .val.warn{color:#f3c27a}
+/* A read-out: a status label with a lit dot, set small in capitals. */
+.val.st{display:inline-flex;align-items:center;font-size:2.1vh;font-weight:600;letter-spacing:.16em;text-transform:uppercase}
+.val.st::before{content:'';width:1vh;height:1vh;border-radius:50%;margin-right:1.3vh;background:currentColor;box-shadow:0 0 1.2vh currentColor}
+.val.st.good,.row.sel .val.st.good{color:#30de61}
+.val.st.hold,.row.sel .val.st.hold{color:#e9ad55}
+.val.st.note,.row.sel .val.st.note{color:rgba(255,255,255,.55)}
+.val.st.bad,.row.sel .val.st.bad{color:#e65050}
+
+/* The mark that separates a row you can press from one you can only read. It
+   sits in a gutter every row reserves, so nothing shifts as the eye moves down
+   and the pressable ones line up as a column of their own. */
+.lbl::before{content:'';display:inline-block;width:.9vh;height:.9vh;border-radius:50%;margin-right:1.6vh;vertical-align:middle;background:transparent;transition:background .22s ease}
+.row.doable .lbl::before{background:rgba(255,255,255,.45)}
+.row.doable.sel .lbl::before{background:#30de61}
+
+/* A heading inside the list: groups rows without being selectable itself. */
+.row.head{height:5.4vh;opacity:1;transform:none}
+.row.head .lbl{font-weight:600;font-size:1.5vh;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+.row.head .lbl::before{display:none}
+
+#msg{position:absolute;top:50%;left:0;transform:translateY(-50%);font-weight:400;font-size:4vh;color:rgba(255,255,255,.8)}
+#msg .msg-detail{font-weight:400;font-size:2vh;line-height:1.8;color:rgba(255,255,255,.6);margin-top:2.2vh}
+
+/* In the lane the rows leave clear on the right. */
+.more{position:absolute;right:0;font-size:2.4vh;color:rgba(255,255,255,.50);opacity:0;transition:opacity .2s;pointer-events:none}
+.more.on{opacity:1}
+#moreUp{top:0}
+#moreDown{bottom:0}
+
+/* Shown briefly after an action so a press that changes something off-screen
+   still acknowledges. */
+#flash{position:absolute;right:8vw;bottom:5vh;font-weight:400;font-size:2.2vh;color:rgba(255,255,255,.85);opacity:0;transition:opacity .3s}
+#flash.on{opacity:1}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="top">
+    <div id="clock">--:--</div>
+    <svg id="mark" viewBox="4 2 15 21" role="img" aria-label="Cactarium"><path d="M12 21V6a2.5 2.5 0 0 1 5 0v6M12 15H8a2.5 2.5 0 0 1-2.5-2.5V9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+  <nav id="tabs"></nav>
+  <div id="main">
+    <div id="list">
+      <div id="msg"></div>
+      <div class="more" id="moreUp">&#9650;</div>
+      <div id="rows"></div>
+      <div class="more" id="moreDown">&#9660;</div>
+    </div>
+    <aside id="hint">
+      <div class="h-title" id="hintTitle"></div>
+      <div class="h-body" id="hintBody"></div>
+      <div class="h-peek" id="hintPeek"></div>
+      <div class="h-warn" id="hintWarn"></div>
+      <div class="h-act" id="hintAct"></div>
+      <div class="h-qr" id="hintQr"><svg id="hintQrSvg" viewBox="0 0 33 33" shape-rendering="crispEdges"></svg><div class="h-url" id="hintUrl"></div></div>
+    </aside>
+  </div>
+  <div id="flash"></div>
+</div>
+<script src="/tvapp/qr.js"></script>
+<script src="/tvapp/tvapp.js"></script>
+</body>
+</html>

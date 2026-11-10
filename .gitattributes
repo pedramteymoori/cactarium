@@ -1,0 +1,5 @@
+# These run under bash on the computer and under the TV's own busybox shell,
+# and a carriage return at the end of each line breaks both. Git for Windows
+# adds one on checkout by default, so pin them to plain line endings.
+*.sh            text eol=lf
+server/cactariumctl text eol=lf

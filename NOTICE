@@ -1,0 +1,35 @@
+Cactarium contains material derived from Glasshouse.
+
+The launcher (server/assets/launcher/, including the animated backgrounds), the launcher
+background's picture handling (server/lib/routes/launcher_background.go, after Glasshouse's
+home-wallpapers.js), the TV app (server/assets/tvapp/) and the dashboard themes (server/assets/ and
+its stylesheets), and the documentation stylesheet (docs/stylesheets/extra.css),
+are derived from Glasshouse (https://github.com/rorygallagher2024/glasshouse),
+which is distributed under the MIT licence reproduced in full below.
+
+Cactarium itself is under the MIT licence in LICENSE. The licence below, with
+Glasshouse's copyright notice, covers the material derived from Glasshouse.
+
+------------------------------------------------------------------------------
+
+MIT License
+
+Copyright (c) 2026 Rory Gallagher
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

@@ -1,0 +1,173 @@
+#!/bin/sh
+# cactariumctl - start/stop/restart/status the Cactarium server on the TV.
+# Usage: cactariumctl {start|stop|restart|status|boot|port}
+#
+# busybox sh only. PATH is minimal at boot, so it is extended below. Only
+# processes whose pids are in var/*.pid (and whose /proc cmdline still looks
+# like ours) are ever signalled.
+
+DIR=${CACTARIUM_DIR:-/mtd_rwarea/apdat/opt/cactarium}
+BIN=$DIR/cactarium
+CONF=$DIR/config.json
+VAR=$DIR/var
+LOG=$VAR/cactarium.log
+SPID=$VAR/supervisor.pid
+PID=$VAR/cactarium.pid
+LOG_MAX=1048576
+
+PATH="$PATH:/bin:/usr/bin:/sbin:/usr/sbin"
+export PATH
+cd / || exit 1
+
+# Port from config.json "listen" (e.g. ":8090" or "0.0.0.0:9000"); default 8090.
+get_port() {
+  p=$(sed -n 's/.*"listen"[[:space:]]*:[[:space:]]*"[^"]*:\([0-9][0-9]*\)".*/\1/p' "$CONF" 2>/dev/null | head -n 1)
+  case "$p" in ''|*[!0-9]*) p=8090 ;; esac
+  echo "$p"
+}
+
+read_pid() {
+  p=$(cat "$1" 2>/dev/null)
+  case "$p" in ''|*[!0-9]*) return 1 ;; esac
+  echo "$p"
+}
+
+# alive PID PATTERN: pid exists, is not a zombie, and its cmdline matches.
+alive() {
+  [ -r "/proc/$1/cmdline" ] || return 1
+  grep -q '^State:[[:space:]]*Z' "/proc/$1/status" 2>/dev/null && return 1
+  { tr '\0' ' ' < "/proc/$1/cmdline"; } 2>/dev/null | grep -q "$2"
+}
+
+supervisor_pid() { p=$(read_pid "$SPID") && alive "$p" cactariumctl && echo "$p"; }
+server_pid()     { p=$(read_pid "$PID")  && alive "$p" "$BIN" && echo "$p"; }
+
+fw_open() {
+  port=$1
+  if command -v iptables >/dev/null 2>&1; then
+    iptables -w 5 -C INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null ||
+      iptables -w 5 -I INPUT 1 -p tcp --dport "$port" -j ACCEPT 2>/dev/null ||
+      echo "WARN: iptables rule for :$port failed"
+  fi
+  if command -v ip6tables >/dev/null 2>&1; then
+    ip6tables -w 5 -C INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null ||
+      ip6tables -w 5 -I INPUT 1 -p tcp --dport "$port" -j ACCEPT 2>/dev/null
+  fi
+  return 0
+}
+
+# Copy-truncate rotation: the server keeps its append-mode descriptor, so the
+# live log just starts over; one previous generation is kept as .1.
+rotate_log() {
+  [ -f "$LOG" ] || return 0
+  sz=$(wc -c < "$LOG" 2>/dev/null)
+  case "$sz" in ''|*[!0-9]*) return 0 ;; esac
+  [ "$sz" -gt "$LOG_MAX" ] || return 0
+  cp -f "$LOG" "$LOG.1" 2>/dev/null && : > "$LOG"
+}
+
+# Runs in a background subshell. Restarts the server after 5 s; gives up after
+# 10 crashes inside 60 s. Stops cleanly when $DIR/disabled appears.
+supervise() {
+  trap '' HUP
+  crashes=0
+  wstart=$(date +%s)
+  while [ ! -f "$DIR/disabled" ]; do
+    rotate_log
+    "$BIN" -config "$CONF" </dev/null >>"$LOG" 2>&1 &
+    spid=$!
+    echo "$spid" > "$PID"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') supervisor: started server pid $spid" >> "$LOG"
+    while alive "$spid" ""; do
+      rotate_log
+      sleep 5
+    done
+    wait "$spid" 2>/dev/null
+    rc=$?
+    rm -f "$PID"
+    [ -f "$DIR/disabled" ] && break
+    now=$(date +%s)
+    if [ $((now - wstart)) -gt 60 ]; then crashes=0; wstart=$now; fi
+    crashes=$((crashes + 1))
+    echo "$(date '+%Y-%m-%d %H:%M:%S') supervisor: server exited rc=$rc (crash $crashes in window)" >> "$LOG"
+    if [ "$crashes" -ge 10 ]; then
+      echo "$(date '+%Y-%m-%d %H:%M:%S') supervisor: 10 crashes within 60 s, giving up" >> "$LOG"
+      break
+    fi
+    sleep 5
+  done
+  rm -f "$SPID"
+}
+
+do_start() {
+  if [ -f "$DIR/disabled" ]; then
+    echo "disabled: $DIR/disabled exists (remove it to allow starting)"
+    return 1
+  fi
+  [ -f "$BIN" ] || { echo "not installed: $BIN"; return 1; }
+  [ -x "$BIN" ] || chmod 755 "$BIN" 2>/dev/null
+  mkdir -p "$VAR" || return 1
+  fw_open "$(get_port)"
+  if sp=$(supervisor_pid); then
+    echo "already running (supervisor $sp)"
+    return 0
+  fi
+  rm -f "$SPID" "$PID"
+  rotate_log
+  ( supervise ) </dev/null >/dev/null 2>&1 &
+  echo "$!" > "$SPID"
+  echo "started (supervisor $!)"
+  return 0
+}
+
+kill_pid() { # kill_pid PID : TERM, wait up to 5 s, then KILL
+  kill "$1" 2>/dev/null
+  i=0
+  while [ "$i" -lt 10 ] && alive "$1" "$2"; do sleep 1; i=$((i + 1)); done
+  alive "$1" "$2" && kill -9 "$1" 2>/dev/null
+  return 0
+}
+
+do_stop() {
+  # Supervisor first, so it cannot respawn the server.
+  if sp=$(supervisor_pid); then kill_pid "$sp" cactariumctl; fi
+  if vp=$(server_pid); then kill_pid "$vp" "$BIN"; fi
+  rm -f "$SPID" "$PID"
+  echo "stopped"
+  return 0
+}
+
+do_status() {
+  port=$(get_port)
+  sp=$(supervisor_pid)
+  vp=$(server_pid)
+  if [ -f "$DIR/disabled" ]; then echo "kill switch: $DIR/disabled present"; fi
+  echo "supervisor: ${sp:-not running}"
+  echo "server:     ${vp:-not running}"
+  if netstat -ltn 2>/dev/null | grep -qE "[:.]$port[[:space:]]"; then
+    echo "port $port: listening"
+  else
+    echo "port $port: not listening"
+  fi
+  if [ -f "$LOG" ]; then echo "--- last log lines"; tail -n 5 "$LOG"; fi
+  [ -n "$vp" ] && return 0
+  return 3
+}
+
+do_boot() {
+  if [ -f "$DIR/disabled" ]; then echo "disabled, not starting at boot"; return 0; fi
+  i=0
+  while [ ! -f /tmp/ntkdriver_completed ] && [ "$i" -lt 60 ]; do sleep 1; i=$((i + 1)); done
+  sleep 8
+  do_start
+}
+
+case "$1" in
+  start)   do_start; exit $? ;;
+  stop)    do_stop; exit $? ;;
+  restart) do_stop; do_start; exit $? ;;
+  status)  do_status; exit $? ;;
+  boot)    do_boot; exit $? ;;
+  port)    get_port; exit 0 ;;
+  *) echo "usage: $0 {start|stop|restart|status|boot|port}" >&2; exit 2 ;;
+esac

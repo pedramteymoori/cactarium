@@ -1,0 +1,79 @@
+site_name: Cactarium
+site_description: A dashboard, launcher and Home Assistant bridge for Philips TitanOS TVs.
+strict: true
+
+theme:
+  name: material
+  logo: logo/cactarium.svg
+  favicon: logo/cactarium.svg
+  palette:
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle: { icon: material/brightness-4, name: Light theme }
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle: { icon: material/brightness-7, name: Dark theme }
+  font:
+    text: Manrope
+    code: JetBrains Mono
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - search.highlight
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installing: install.md
+      - Updating and uninstalling: managing.md
+  - The dashboard:
+      - dashboard/index.md
+      - Control: dashboard/control.md
+      - Metrics: dashboard/metrics.md
+      - Apps: dashboard/apps.md
+      - Home: dashboard/home.md
+      - Picture: dashboard/picture.md
+      - Audio: dashboard/audio.md
+      - Game: dashboard/game.md
+      - Ambilight: dashboard/ambilight.md
+      - System: dashboard/advanced.md
+      - Server: dashboard/server.md
+      - The TV app: dashboard/tv-app.md
+  - The launcher: launcher.md
+  - Smart Home:
+      - Home Assistant: HOME-ASSISTANT.md
+  - Advanced & Administration:
+      - Security: SECURITY.md
+      - What it changes on the TV: TV-CHANGES.md
+  - Development:
+      - Contributing: CONTRIBUTING.md
+      - Internals: IMPLEMENTATION.md
+      - Testing: development/testing.md
+      - Changing the launcher: development/WRITING-LAUNCHERS.md
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - github-callouts
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.tabbed:
+      alternate_style: true
+
+validation:
+  anchors: warn
+  unrecognized_links: warn

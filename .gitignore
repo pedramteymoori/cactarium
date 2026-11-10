@@ -1,0 +1,9 @@
+.DS_Store
+dist/
+dev-config.json
+config.json
+site/
+
+# Raw evidence pulled from a TV (Philips firmware files, device dumps) never
+# belongs in this repository.
+research/
