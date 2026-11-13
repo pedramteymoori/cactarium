@@ -64,6 +64,9 @@ Choose **TitanOS Home** on the dashboard's Home tab to switch it off without a r
 
 ## Installing
 
+The installation preflight uses the public `/api/launcher/enabled` endpoint,
+so an API access token can remain enabled during installation.
+
 First deploy a build that serves `phi-hook.js` (`server/deploy.sh <tv-ip>`), then:
 
 ```bash

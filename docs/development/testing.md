@@ -65,3 +65,11 @@ For hook work, the diagnostic reports the hook posts are at `GET /api/home/diag`
 ## Testing on a real TV
 
 Deploy the branch, then try the change with the remote. For the launcher: install, cold boot, then check Home, double Home, Back, an app, an input, Settings and a wake from standby. State the TV and firmware in your pull request.
+
+## Launcher preflight with an API token
+
+On 77OLED760/12 (TPN258E, firmware 058.010.032.001), the original
+`--install-home` failed because unauthenticated `/api/state` returned 401.
+Using the public `/api/launcher/enabled` endpoint allowed installation with
+the token retained. `TestLauncherEndpointsNeedNoToken` covers this endpoint.
+The owner confirmed the launcher appeared after a cold boot.
