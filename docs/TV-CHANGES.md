@@ -59,7 +59,7 @@ Pairing registers a device named "Cactarium" (app id `app.cactarium`) with the T
 Only with `--install-home`. All of it lives under `/swdl/UI` (plus `/tmp` while installing):
 
 1. The vendor boot script bind-mounts `/swdl/UI/page` over `/mtd_apexe/board/mframework/webui/PHI/page`, but only if `/swdl/UI` exists.
-2. `--install-home` checks that Cactarium answers and that `/swdl` has at least 400 MB free, refuses if the page is already mounted from somewhere, copies the stock page tree to `/swdl/UI.tmp/page`, relabels it with `chcon -R -t default_t` (the browser cannot read the unlabeled files `/swdl` has by default, and the policy allows it to read `default_t`), and verifies that the entry count, the contents (md5) and every label match.
+2. `--install-home` checks the public `/api/launcher/enabled` endpoint (so a configured API token does not block installation) and that `/swdl` has at least 400 MB free, refuses if the page is already mounted from somewhere, copies the stock page tree to `/swdl/UI.tmp/page`, relabels it with `chcon -R -t default_t` (the browser cannot read the unlabeled files `/swdl` has by default, and the policy allows it to read `default_t`), and verifies that the entry count, the contents (md5) and every label match.
 3. It saves the stock `index.html` as `/swdl/UI/index.html.orig` and adds one inline loader script directly before `</body>` of the copy. The loader fetches `http://localhost:<port>/phi-hook.js` with a fresh URL each time and retries every 5 seconds for 5 minutes while Cactarium is still starting.
 4. It moves the finished copy to `/swdl/UI`. On any failed check `/swdl/UI` is left absent.
 

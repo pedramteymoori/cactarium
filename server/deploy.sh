@@ -243,8 +243,9 @@ PORT=$1; CTLDIR=$2
 trap 'rm -rf /swdl/UI.tmp /tmp/cactarium-idx.new' EXIT
 trap 'exit 1' INT HUP TERM
 echo "== preflight"
-wget -q -O - "http://127.0.0.1:$PORT/api/state" >/dev/null 2>&1 </dev/null \
-  || fatal "Cactarium does not answer on 127.0.0.1:$PORT/api/state"
+# The launcher endpoint is public even when dashboard API token auth is enabled.
+wget -q -O - "http://127.0.0.1:$PORT/api/launcher/enabled" >/dev/null 2>&1 </dev/null \
+  || fatal "Cactarium does not answer on 127.0.0.1:$PORT/api/launcher/enabled"
 echo "cactarium answers on :$PORT"
 wget -q -O - "http://127.0.0.1:$PORT/phi-hook.js" 2>/dev/null </dev/null | grep -q . \
   || echo "WARNING: /phi-hook.js is not served by this Cactarium build; run server/deploy.sh <ip> first"
