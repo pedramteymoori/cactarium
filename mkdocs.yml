@@ -56,7 +56,6 @@ nav:
       - Contributing: CONTRIBUTING.md
       - Internals: IMPLEMENTATION.md
       - Testing: development/testing.md
-      - 77OLED760 report: development/77oled760.md
       - Changing the launcher: development/WRITING-LAUNCHERS.md
 
 extra_css:
