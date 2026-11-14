@@ -17,7 +17,9 @@ That's it. The dashboard is ready to use.
 
 The MQTT bridge also needs an MQTT broker on the network. Home Assistant's Mosquitto add-on is one option.
 
-Tried on: 55PUS8450/12, firmware TPN256E_V056.010.032.001. Nothing else is confirmed.
+Tried on: 55PUS8450/12, firmware TPN256E_V056.010.032.001. An external
+[77OLED760/12 installation report](development/77oled760.md) records additional
+checks and their limits.
 
 ## Install steps
 
